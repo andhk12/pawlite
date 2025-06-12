@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Tag -->
+        <TextView
+            android:id="@+id/text_tag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="#Grooming"
+            android:textColor="#2F3A60"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Placeholder image -->
+        <ImageView
+            android:id="@+id/image_resource"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
+            android:background="#D6D6D6"
+            android:layout_marginBottom="12dp"
+            android:contentDescription="Resource Image" />
+
+        <!-- Title -->
+
+        <TextView
+            android:id="@+id/text_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="“Panduan Grooming Kucing Sendiri”"
+            android:textStyle="bold"
+            android:textColor="#2F3A60"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Date -->
+        <TextView
+            android:id="@+id/text_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12 April 2069"
+            android:textColor="#6B728E"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/text_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tutor dek cara mandiin kucing di rumah...\n[Read More]"
+            android:textColor="#6B728E"
+            android:textSize="14sp"/>
+
+        <ImageView
+            android:id="@+id/icon_like"
+            android:layout_width="23dp"
+            android:layout_height="20dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Like icon"
+            android:src="@drawable/ic_thumb_up" />
+
+        <!-- Like Icon -->
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
