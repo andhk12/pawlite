@@ -1,35 +1,58 @@
 package com.example.pawlite
 
-import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 
-class AddJournalActivity : AppCompatActivity() {
+class AddJournalFragment : Fragment() {
 
     companion object {
+        const val REQUEST_KEY = "add_journal_request"
+        const val RESULT_KEY = "journal_result"
+
         const val EXTRA_IS_UPDATE = "extra_is_update"
         const val EXTRA_JOURNAL_DATA = "extra_journal_data"
+        const val EXTRA_POSITION = "extra_position"
+
+
+        fun newInstance(isUpdate: Boolean = false, journalEntry: JournalEntry? = null, position: Int = -1): AddJournalFragment {
+            val fragment = AddJournalFragment()
+            fragment.arguments = bundleOf(
+                EXTRA_IS_UPDATE to isUpdate,
+                EXTRA_JOURNAL_DATA to journalEntry,
+                EXTRA_POSITION to position
+            )
+            return fragment
+        }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_add_journal)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.activity_add_journal, container, false)
+    }
 
-        val backButton = findViewById<ImageView>(R.id.backButton)
-        val headerTextView = findViewById<TextView>(R.id.headerTextView)
-        val dateEditText = findViewById<EditText>(R.id.dateEditText)
-        val titleEditText = findViewById<EditText>(R.id.titleEditText)
-        val descriptionEditText = findViewById<EditText>(R.id.descriptionEditText)
-        val uploadButton = findViewById<Button>(R.id.uploadButton)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        val isUpdate = intent.getBooleanExtra(EXTRA_IS_UPDATE, false)
+        val backButton = view.findViewById<ImageView>(R.id.backButton)
+        val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
+        val dateEditText = view.findViewById<EditText>(R.id.dateEditText)
+        val titleEditText = view.findViewById<EditText>(R.id.titleEditText)
+        val descriptionEditText = view.findViewById<EditText>(R.id.descriptionEditText)
+        val uploadButton = view.findViewById<Button>(R.id.uploadButton)
+
+        val isUpdate = arguments?.getBoolean(EXTRA_IS_UPDATE, false) ?: false
+        val position = arguments?.getInt(EXTRA_POSITION, -1) ?: -1
+
 
         if (isUpdate) {
             headerTextView.text = "UPDATE JOURNAL ENTRY"
             uploadButton.text = "Update"
-            val entry = intent.getParcelableExtra<JournalEntry>(EXTRA_JOURNAL_DATA)
+            val entry = arguments?.getParcelable<JournalEntry>(EXTRA_JOURNAL_DATA)
             if (entry != null) {
                 dateEditText.setText(entry.date)
                 titleEditText.setText(entry.title)
@@ -38,7 +61,7 @@ class AddJournalActivity : AppCompatActivity() {
         }
 
         backButton.setOnClickListener {
-            finish()
+            parentFragmentManager.popBackStack()
         }
 
         uploadButton.setOnClickListener {
@@ -47,23 +70,18 @@ class AddJournalActivity : AppCompatActivity() {
             val desc = descriptionEditText.text.toString()
 
             if (date.isNotBlank() && title.isNotBlank() && desc.isNotBlank()) {
-                val resultIntent = Intent()
                 val resultEntry = JournalEntry(date, title, desc, R.drawable.sample_cat) // default image
 
-                if (isUpdate) {
-                    resultIntent.putExtra(EXTRA_JOURNAL_DATA, resultEntry)
-                } else {
-                    // Logika untuk add baru
-                    resultIntent.putExtra("journal_date", date)
-                    resultIntent.putExtra("journal_title", title)
-                    resultIntent.putExtra("journal_description", desc)
-                    resultIntent.putExtra("journal_image_res", R.drawable.sample_cat)
-                }
+                val resultBundle = bundleOf(
+                    RESULT_KEY to resultEntry,
+                    EXTRA_IS_UPDATE to isUpdate,
+                    EXTRA_POSITION to position
+                )
+                setFragmentResult(REQUEST_KEY, resultBundle)
+                parentFragmentManager.popBackStack()
 
-                setResult(Activity.RESULT_OK, resultIntent)
-                finish()
             } else {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -1,77 +1,77 @@
 package com.example.pawlite
 
-import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 
-class DetailJournalActivity : AppCompatActivity() {
+class DetailJournalFragment : Fragment() {
 
     private var journalPosition: Int = -1
+    private var journalEntry: JournalEntry? = null
 
     companion object {
+        const val REQUEST_KEY = "detail_journal_request"
+        const val ACTION_DELETE = "action_delete"
         const val EXTRA_JOURNAL_ENTRY = "extra_journal_entry"
         const val EXTRA_POSITION = "extra_position"
-        const val ACTION_DELETE = "action_delete"
-        const val ACTION_UPDATE = "action_update"
-        private const val UPDATE_REQUEST_CODE = 2
+
+        fun newInstance(entry: JournalEntry, position: Int): DetailJournalFragment {
+            val fragment = DetailJournalFragment()
+            fragment.arguments = bundleOf(
+                EXTRA_JOURNAL_ENTRY to entry,
+                EXTRA_POSITION to position
+            )
+            return fragment
+        }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_detail_journal)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.activity_detail_journal, container, false)
+    }
 
-        val titleText: TextView = findViewById(R.id.titleText)
-        val dateText: TextView = findViewById(R.id.dateText)
-        val descriptionText: TextView = findViewById(R.id.descriptionText)
-        val imageView: ImageView = findViewById(R.id.img_journal_detail)
-        val updateButton: Button = findViewById(R.id.btn_update)
-        val deleteButton: Button = findViewById(R.id.btn_delete)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        val entry = intent.getParcelableExtra<JournalEntry>(EXTRA_JOURNAL_ENTRY)
-        journalPosition = intent.getIntExtra(EXTRA_POSITION, -1)
+        val titleText: TextView = view.findViewById(R.id.titleText)
+        val dateText: TextView = view.findViewById(R.id.dateText)
+        val descriptionText: TextView = view.findViewById(R.id.descriptionText)
+        val imageView: ImageView = view.findViewById(R.id.img_journal_detail)
+        val updateButton: Button = view.findViewById(R.id.btn_update)
+        val deleteButton: Button = view.findViewById(R.id.btn_delete)
 
-        if (entry != null) {
+        journalEntry = arguments?.getParcelable(EXTRA_JOURNAL_ENTRY)
+        journalPosition = arguments?.getInt(EXTRA_POSITION, -1) ?: -1
+
+
+        journalEntry?.let { entry ->
             titleText.text = entry.title
             dateText.text = entry.date
             descriptionText.text = entry.description
             imageView.setImageResource(entry.imageResId)
         }
 
-
         deleteButton.setOnClickListener {
-            val resultIntent = Intent().apply {
-                putExtra(EXTRA_POSITION, journalPosition)
-                putExtra("action", ACTION_DELETE)
-            }
-            setResult(Activity.RESULT_OK, resultIntent)
-            finish()
+            val resultBundle = bundleOf(
+                "action" to ACTION_DELETE,
+                EXTRA_POSITION to journalPosition
+            )
+            setFragmentResult(REQUEST_KEY, resultBundle)
+            parentFragmentManager.popBackStack()
         }
 
         updateButton.setOnClickListener {
-            val intent = Intent(this, AddJournalActivity::class.java).apply {
-                putExtra(AddJournalActivity.EXTRA_IS_UPDATE, true)
-                putExtra(AddJournalActivity.EXTRA_JOURNAL_DATA, entry)
+            journalEntry?.let { entry ->
+                (activity as? MainActivity)?.navigateTo(
+                    AddJournalFragment.newInstance(isUpdate = true, journalEntry = entry, position = journalPosition)
+                )
             }
-            startActivityForResult(intent, UPDATE_REQUEST_CODE)
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == UPDATE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            // Forward the result from AddJournalActivity back to JournalFragment
-            val updatedEntry = data?.getParcelableExtra<JournalEntry>(AddJournalActivity.EXTRA_JOURNAL_DATA)
-            val resultIntent = Intent().apply {
-                putExtra("action", ACTION_UPDATE)
-                putExtra(EXTRA_JOURNAL_ENTRY, updatedEntry)
-                putExtra(EXTRA_POSITION, journalPosition)
-            }
-            setResult(Activity.RESULT_OK, resultIntent)
-            finish()
         }
     }
 }

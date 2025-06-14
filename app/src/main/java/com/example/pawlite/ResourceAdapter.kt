@@ -1,6 +1,5 @@
 package com.example.pawlite
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,8 +7,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class ResourceAdapter(private val resources: MutableList<ResourceEntry>, private val fragment: ResourceFragment) :
-    RecyclerView.Adapter<ResourceAdapter.ResourceViewHolder>() {
+class ResourceAdapter(
+    private val resources: MutableList<ResourceEntry>,
+    private val onItemClicked: (ResourceEntry, Int) -> Unit
+) : RecyclerView.Adapter<ResourceAdapter.ResourceViewHolder>() {
 
     class ResourceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tag: TextView = itemView.findViewById(R.id.text_tag)
@@ -34,12 +35,7 @@ class ResourceAdapter(private val resources: MutableList<ResourceEntry>, private
         holder.image.setImageResource(resource.imageResId)
 
         holder.itemView.setOnClickListener {
-            val context = holder.itemView.context
-            val intent = Intent(context, DetailResourceActivity::class.java).apply {
-                putExtra(DetailResourceActivity.EXTRA_RESOURCE_ENTRY, resource)
-                putExtra(DetailResourceActivity.EXTRA_POSITION, position)
-            }
-            fragment.startActivityForResult(intent, ResourceFragment.DETAIL_REQUEST_CODE)
+            onItemClicked(resource, position)
         }
     }
 

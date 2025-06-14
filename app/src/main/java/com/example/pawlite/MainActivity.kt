@@ -1,37 +1,37 @@
 package com.example.pawlite
 
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 
 class MainActivity : AppCompatActivity() {
 
-    // 1. Buat instance untuk setiap fragment dan simpan.
-    // Ini memastikan kita selalu menggunakan objek yang sama dan tidak membuat yang baru.
     private val journalFragment by lazy { JournalFragment() }
     private val resourceFragment by lazy { ResourceFragment() }
-    private var activeFragment: Fragment = journalFragment // Lacak fragment yang sedang aktif
+    private var activeFragment: Fragment = journalFragment
+
+    private lateinit var btnJournal: Button
+    private lateinit var btnResource: Button
+    private lateinit var tabContainer: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val btnJournal: Button = findViewById(R.id.btn_journal)
-        val btnResource: Button = findViewById(R.id.btn_resource)
+        btnJournal = findViewById(R.id.btn_journal)
+        btnResource = findViewById(R.id.btn_resource)
+        tabContainer = findViewById(R.id.tab_container)
 
-        // 2. Saat aplikasi pertama kali dijalankan, tambahkan kedua fragment ke FragmentManager.
-        // Atur JournalFragment sebagai yang terlihat (show) dan sembunyikan (hide) ResourceFragment.
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .add(R.id.fragment_container, resourceFragment, "resource").hide(resourceFragment)
                 .add(R.id.fragment_container, journalFragment, "journal")
                 .commit()
-            updateButtonUI(isJournalSelected = true) // Set tampilan tombol awal
+            updateButtonUI(isJournalSelected = true)
         }
 
-        // 3. Ubah listener klik untuk menyembunyikan fragment aktif dan menampilkan yang baru.
-        // Ini tidak akan menghancurkan state fragment.
         btnJournal.setOnClickListener {
             if (activeFragment != journalFragment) {
                 supportFragmentManager.beginTransaction().hide(activeFragment).show(journalFragment).commit()
@@ -49,11 +49,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Helper function untuk memperbarui tampilan tombol
-    private fun updateButtonUI(isJournalSelected: Boolean) {
-        val btnJournal: Button = findViewById(R.id.btn_journal)
-        val btnResource: Button = findViewById(R.id.btn_resource)
+    fun navigateTo(fragment: Fragment, addToBackStack: Boolean = true) {
+        val transaction = supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
 
+        if (addToBackStack) {
+            transaction.addToBackStack(null)
+        }
+        transaction.commit()
+
+        // Sembunyikan tombol tab saat di halaman detail/tambah
+        tabContainer.visibility = View.GONE
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+            // Tampilkan kembali tombol tab setelah kembali dari halaman detail
+            tabContainer.visibility = View.VISIBLE
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun updateButtonUI(isJournalSelected: Boolean) {
         if (isJournalSelected) {
             btnJournal.setBackgroundResource(R.drawable.tab_selected)
             btnJournal.setTextColor(getColor(android.R.color.white))
@@ -65,11 +84,5 @@ class MainActivity : AppCompatActivity() {
             btnJournal.setBackgroundResource(R.drawable.tab_unselected)
             btnJournal.setTextColor(getColor(android.R.color.black))
         }
-    }
-
-    private fun loadFragment(fragment: Fragment) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
     }
 }
