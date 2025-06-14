@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class ResourceAdapter(private val resources: MutableList<ResourceEntry>) :
+class ResourceAdapter(private val resources: MutableList<ResourceEntry>, private val fragment: ResourceFragment) :
     RecyclerView.Adapter<ResourceAdapter.ResourceViewHolder>() {
 
     class ResourceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -36,15 +36,11 @@ class ResourceAdapter(private val resources: MutableList<ResourceEntry>) :
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, DetailResourceActivity::class.java).apply {
-                putExtra("tag", resource.tag)
-                putExtra("title", resource.title)
-                putExtra("date", resource.date)
-                putExtra("description", resource.description)
-                putExtra("imageResId", resource.imageResId)
+                putExtra(DetailResourceActivity.EXTRA_RESOURCE_ENTRY, resource)
+                putExtra(DetailResourceActivity.EXTRA_POSITION, position)
             }
-            context.startActivity(intent)
+            fragment.startActivityForResult(intent, ResourceFragment.DETAIL_REQUEST_CODE)
         }
-
     }
 
     override fun getItemCount(): Int = resources.size
@@ -54,19 +50,17 @@ class ResourceAdapter(private val resources: MutableList<ResourceEntry>) :
         notifyItemInserted(0)
     }
 
+    fun updateEntry(position: Int, entry: ResourceEntry) {
+        if (position >= 0 && position < resources.size) {
+            resources[position] = entry
+            notifyItemChanged(position)
+        }
+    }
+
     fun removeEntry(position: Int) {
-        resources.removeAt(position)
-        notifyItemRemoved(position)
+        if (position >= 0 && position < resources.size) {
+            resources.removeAt(position)
+            notifyItemRemoved(position)
+        }
     }
-
-    fun restoreEntry(entry: ResourceEntry, position: Int) {
-        resources.add(position, entry)
-        notifyItemInserted(position)
-    }
-
-    fun getEntry(position: Int): ResourceEntry {
-        return resources[position]
-    }
-
 }
-

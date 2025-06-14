@@ -1,5 +1,7 @@
 package com.example.pawlite
 
+import android.app.Activity
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,7 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class JournalAdapter(private val journalEntries: MutableList<JournalEntry>) :
+class JournalAdapter(private val journalEntries: MutableList<JournalEntry>, private val fragment: JournalFragment) :
     RecyclerView.Adapter<JournalAdapter.JournalViewHolder>() {
 
     class JournalViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -29,18 +31,37 @@ class JournalAdapter(private val journalEntries: MutableList<JournalEntry>) :
         holder.journalDate.text = entry.date
         holder.journalTitle.text = entry.title
         holder.journalDescription.text = entry.description
+
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(context, DetailJournalActivity::class.java).apply {
+                putExtra(DetailJournalActivity.EXTRA_JOURNAL_ENTRY, entry)
+                putExtra(DetailJournalActivity.EXTRA_POSITION, position)
+            }
+            // Gunakan fragment untuk memulai activity for result
+            fragment.startActivityForResult(intent, JournalFragment.DETAIL_REQUEST_CODE)
+        }
     }
 
     override fun getItemCount() = journalEntries.size
 
     fun addEntry(entry: JournalEntry) {
-        journalEntries.add(0, entry) // Menambahkan di posisi paling atas
+        journalEntries.add(0, entry)
         notifyItemInserted(0)
     }
 
+    fun updateEntry(position: Int, entry: JournalEntry) {
+        if (position >= 0 && position < journalEntries.size) {
+            journalEntries[position] = entry
+            notifyItemChanged(position)
+        }
+    }
+
     fun removeEntry(position: Int) {
-        journalEntries.removeAt(position)
-        notifyItemRemoved(position)
+        if (position >= 0 && position < journalEntries.size) {
+            journalEntries.removeAt(position)
+            notifyItemRemoved(position)
+        }
     }
 
     fun getEntry(position: Int): JournalEntry {

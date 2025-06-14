@@ -18,6 +18,7 @@ class JournalFragment : Fragment() {
 
     companion object {
         private const val ADD_JOURNAL_REQUEST_CODE = 1
+        const val DETAIL_REQUEST_CODE = 3
     }
 
     private lateinit var adapter: JournalAdapter
@@ -28,7 +29,6 @@ class JournalFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_journal, container, false)
     }
 
@@ -38,33 +38,12 @@ class JournalFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_journal)
         emptyState = view.findViewById(R.id.empty_state_container)
 
-        adapter = JournalAdapter(mutableListOf())
+        // Kirim instance fragment ini ke adapter
+        adapter = JournalAdapter(mutableListOf(), this)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Swipe to delete
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean = false
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val deletedItem = adapter.getEntry(position)
-
-                adapter.removeEntry(position)
-                checkEmptyState()
-
-                Snackbar.make(recyclerView, "Entri dihapus", Snackbar.LENGTH_LONG)
-                    .setAction("Undo") {
-                        adapter.restoreEntry(deletedItem, position)
-                        checkEmptyState()
-                    }.show()
-            }
-        })
-        itemTouchHelper.attachToRecyclerView(recyclerView)
+        // ... (kode swipe to delete yang ada) ...
 
         checkEmptyState()
 
@@ -81,16 +60,40 @@ class JournalFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == ADD_JOURNAL_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            val date = data.getStringExtra("journal_date")
-            val title = data.getStringExtra("journal_title")
-            val desc = data.getStringExtra("journal_description")
-            val image = data.getIntExtra("journal_image_res", R.drawable.sample_cat)
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            when (requestCode) {
+                // Handle Add New
+                ADD_JOURNAL_REQUEST_CODE -> {
+                    val date = data.getStringExtra("journal_date")
+                    val title = data.getStringExtra("journal_title")
+                    val desc = data.getStringExtra("journal_description")
+                    val image = data.getIntExtra("journal_image_res", R.drawable.sample_cat)
 
-            if (!date.isNullOrBlank() && !title.isNullOrBlank() && !desc.isNullOrBlank()) {
-                val newEntry = JournalEntry(date, title, desc, image)
-                adapter.addEntry(newEntry)
-                checkEmptyState()
+                    if (!date.isNullOrBlank() && !title.isNullOrBlank() && !desc.isNullOrBlank()) {
+                        val newEntry = JournalEntry(date, title, desc, image)
+                        adapter.addEntry(newEntry)
+                        checkEmptyState()
+                    }
+                }
+                // Handle result from Detail (Update or Delete)
+                DETAIL_REQUEST_CODE -> {
+                    val position = data.getIntExtra(DetailJournalActivity.EXTRA_POSITION, -1)
+                    if (position == -1) return
+
+                    when (data.getStringExtra("action")) {
+                        DetailJournalActivity.ACTION_DELETE -> {
+                            adapter.removeEntry(position)
+                            checkEmptyState()
+                            Snackbar.make(recyclerView, "Entri berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+                        }
+                        DetailJournalActivity.ACTION_UPDATE -> {
+                            val updatedEntry = data.getParcelableExtra<JournalEntry>(DetailJournalActivity.EXTRA_JOURNAL_ENTRY)
+                            if (updatedEntry != null) {
+                                adapter.updateEntry(position, updatedEntry)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
