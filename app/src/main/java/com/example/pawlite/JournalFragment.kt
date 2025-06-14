@@ -7,9 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
@@ -19,11 +19,21 @@ class JournalFragment : Fragment() {
     companion object {
         private const val ADD_JOURNAL_REQUEST_CODE = 1
         const val DETAIL_REQUEST_CODE = 3
+        private const val UPDATE_HEALTH_REQUEST_CODE = 4 // Kode unik untuk health update
     }
 
     private lateinit var adapter: JournalAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: View
+
+    // Deklarasikan TextView untuk Health Summary
+    private lateinit var tvLastVet: TextView
+
+    // Variabel untuk menyimpan data health summary
+    private var lastVetVisit: String = "3 Apr 2069"
+    private var weight: String = "6.9 kg"
+    private var vaccines: String = "1"
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,14 +47,14 @@ class JournalFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recycler_journal)
         emptyState = view.findViewById(R.id.empty_state_container)
+        tvLastVet = view.findViewById(R.id.last_vet) // Inisialisasi TextView
 
         // Kirim instance fragment ini ke adapter
         adapter = JournalAdapter(mutableListOf(), this)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // ... (kode swipe to delete yang ada) ...
-
+        updateHealthSummaryUI() // Panggil fungsi untuk update UI
         checkEmptyState()
 
         view.findViewById<Button>(R.id.btn_add_journal).setOnClickListener {
@@ -52,8 +62,12 @@ class JournalFragment : Fragment() {
         }
 
         view.findViewById<CardView>(R.id.card_health_summary).setOnClickListener {
-            val intent = Intent(requireContext(), HealthDetailActivity::class.java)
-            startActivity(intent)
+            val intent = Intent(requireContext(), HealthDetailActivity::class.java).apply {
+                putExtra(HealthDetailActivity.EXTRA_VET_VISIT, lastVetVisit)
+                putExtra(HealthDetailActivity.EXTRA_WEIGHT, weight)
+                putExtra(HealthDetailActivity.EXTRA_VACCINES, vaccines)
+            }
+            startActivityForResult(intent, UPDATE_HEALTH_REQUEST_CODE)
         }
     }
 
@@ -94,6 +108,14 @@ class JournalFragment : Fragment() {
                         }
                     }
                 }
+                // Handle result from HealthDetailActivity
+                UPDATE_HEALTH_REQUEST_CODE -> {
+                    lastVetVisit = data.getStringExtra(HealthDetailActivity.EXTRA_VET_VISIT) ?: lastVetVisit
+                    weight = data.getStringExtra(HealthDetailActivity.EXTRA_WEIGHT) ?: weight
+                    vaccines = data.getStringExtra(HealthDetailActivity.EXTRA_VACCINES) ?: vaccines
+                    updateHealthSummaryUI()
+                    Snackbar.make(requireView(), "Health summary updated successfully!", Snackbar.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -106,5 +128,9 @@ class JournalFragment : Fragment() {
             recyclerView.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
         }
+    }
+
+    private fun updateHealthSummaryUI() {
+        tvLastVet.text = "Last Vet Visit: $lastVetVisit\nWeight: $weight\nVaccines: $vaccines"
     }
 }
