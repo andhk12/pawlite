@@ -8,5 +8,6 @@ data class JournalEntry(
     val date: String,
     val title: String,
     val description: String,
-    val imageResId: Int
+    // Ubah tipe data dari Int menjadi String
+    val imageUrl: String
 ) : Parcelable

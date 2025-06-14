@@ -17,29 +17,23 @@ class ResourceFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: View
 
-    // Tombol-tombol untuk filter
     private lateinit var btnAll: Button
     private lateinit var btnNutrition: Button
     private lateinit var btnGrooming: Button
     private lateinit var btnHealth: Button
     private lateinit var filterButtons: List<Button>
 
-    // Daftar master yang berisi semua data, tidak akan diubah oleh filter
     private val masterResourceEntries = mutableListOf<ResourceEntry>()
-    // Daftar yang ditampilkan di adapter, isinya sesuai hasil filter
     private val displayedResourceEntries = mutableListOf<ResourceEntry>()
 
-    // Untuk menyimpan state filter yang sedang aktif
     private var currentFilterTag: String = "All"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Menambahkan data awal ke daftar master (hanya sekali saat fragment dibuat)
-        // Dalam aplikasi nyata, data ini bisa berasal dari database atau API
-        if (masterResourceEntries.isEmpty()) {
-            masterResourceEntries.addAll(getInitialDummyData())
-        }
+        // --- PERUBAHAN DI SINI: Hapus pemanggilan getInitialDummyData ---
+        // if (masterResourceEntries.isEmpty()) {
+        //     masterResourceEntries.addAll(getInitialDummyData())
+        // }
 
         setupFragmentResultListeners()
     }
@@ -57,9 +51,7 @@ class ResourceFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_resource)
         emptyState = view.findViewById(R.id.empty_state_container)
 
-        // Inisialisasi adapter dengan daftar yang akan ditampilkan
         adapter = ResourceAdapter(displayedResourceEntries) { entry, _ ->
-            // Saat item diklik, cari posisinya di daftar master untuk memastikan integritas data
             val masterIndex = masterResourceEntries.indexOf(entry)
             if (masterIndex != -1) {
                 (activity as? MainActivity)?.navigateTo(DetailResourceFragment.newInstance(entry, masterIndex))
@@ -72,10 +64,7 @@ class ResourceFragment : Fragment() {
             (activity as? MainActivity)?.navigateTo(AddResourceFragment.newInstance())
         }
 
-        // Menyiapkan tombol filter
         setupFilterButtons(view)
-
-        // Menerapkan filter saat tampilan pertama kali dibuat
         applyFilter()
     }
 
@@ -105,21 +94,15 @@ class ResourceFragment : Fragment() {
     }
 
     private fun applyFilter() {
-        // 1. Buat daftar sementara hasil filter dari daftar master
         val filteredList = if (currentFilterTag == "All") {
             masterResourceEntries
         } else {
             masterResourceEntries.filter { it.tag.equals(currentFilterTag, ignoreCase = true) }
         }
 
-        // 2. Perbarui daftar yang akan ditampilkan
         displayedResourceEntries.clear()
         displayedResourceEntries.addAll(filteredList)
-
-        // 3. Beri tahu adapter bahwa data telah berubah
         adapter.notifyDataSetChanged()
-
-        // 4. Perbarui tampilan tombol filter dan empty state
         updateButtonUI()
         checkEmptyState()
     }
@@ -150,27 +133,22 @@ class ResourceFragment : Fragment() {
             val position = bundle.getInt(AddResourceFragment.EXTRA_POSITION, -1)
 
             if (newEntry != null) {
-                if (isUpdate && position != -1) {
-                    // Jika update, ubah data di daftar master
+                if (isUpdate && position != -1 && position < masterResourceEntries.size) {
                     masterResourceEntries[position] = newEntry
                 } else {
-                    // Jika data baru, tambahkan ke daftar master
                     masterResourceEntries.add(0, newEntry)
                 }
-                // Terapkan kembali filter untuk memperbarui tampilan
                 applyFilter()
             }
         }
 
         parentFragmentManager.setFragmentResultListener(DetailResourceFragment.REQUEST_KEY, this) { _, bundle ->
             val position = bundle.getInt(DetailResourceFragment.EXTRA_POSITION, -1)
-            if (position == -1) return@setFragmentResultListener
+            if (position == -1 || position >= masterResourceEntries.size) return@setFragmentResultListener
 
             when (bundle.getString("action")) {
                 DetailResourceFragment.ACTION_DELETE -> {
-                    // Hapus data dari daftar master
                     masterResourceEntries.removeAt(position)
-                    // Terapkan kembali filter untuk memperbarui tampilan
                     applyFilter()
                     Snackbar.make(recyclerView, "Resource berhasil dihapus", Snackbar.LENGTH_SHORT).show()
                 }
@@ -196,13 +174,8 @@ class ResourceFragment : Fragment() {
         }
     }
 
-    // Contoh data awal untuk demonstrasi
-    private fun getInitialDummyData(): List<ResourceEntry> {
-        return listOf(
-            ResourceEntry("#Grooming", "Panduan Grooming Kucing Sendiri", "12 April 2025", "Tutor dek cara mandiin kucing di rumah...", R.drawable.sample_cat),
-            ResourceEntry("#Health", "Tanda-tanda Kucing Sakit", "10 April 2025", "Kucing yang sehat terlihat aktif dan waspada...", R.drawable.sample_cat),
-            ResourceEntry("#Nutrition", "Makanan Terbaik untuk Anak Kucing", "8 April 2025", "Anak kucing membutuhkan nutrisi yang berbeda...", R.drawable.sample_cat),
-            ResourceEntry("#Grooming", "Cara Memotong Kuku Kucing", "5 April 2025", "Memotong kuku kucing bisa jadi tantangan...", R.drawable.sample_cat)
-        )
-    }
+    // --- PERUBAHAN DI SINI: HAPUS SELURUH FUNGSI INI ---
+    // private fun getInitialDummyData(): List<ResourceEntry> {
+    //     ...
+    // }
 }

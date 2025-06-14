@@ -14,24 +14,22 @@ import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
 import java.util.*
 
-// Nama kelas sudah benar (AddResourceFragment)
-class AddResourceFragment : Fragment() {
+// Ganti nama file dan kelas dari AddJournalActivity menjadi AddJournalFragment
+class AddJournalFragment : Fragment() {
 
-    // --- Deklarasi View ---
     private lateinit var imagePreview: ImageView
     private lateinit var btnSelectImage: Button
     private lateinit var uploadButton: Button
-    private lateinit var dateEditText: EditText
     private lateinit var titleEditText: EditText
+    private lateinit var dateEditText: EditText
     private lateinit var descriptionEditText: EditText
-    private lateinit var tagSpinner: Spinner
     private lateinit var headerTextView: TextView
+    private lateinit var progressBar: ProgressBar // Tambahkan ProgressBar
 
-    // --- Variabel untuk data gambar ---
     private var imageUri: Uri? = null
     private var existingImageUrl: String? = null
 
-    // --- Launcher untuk memilih gambar dari galeri ---
+    // ActivityResultLauncher untuk memilih gambar dari galeri
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             imageUri = it
@@ -42,70 +40,57 @@ class AddResourceFragment : Fragment() {
     }
 
     companion object {
-        const val REQUEST_KEY = "add_resource_request"
-        const val RESULT_KEY = "resource_result"
-        const val EXTRA_IS_UPDATE = "extra_is_update_resource"
-        const val EXTRA_RESOURCE_DATA = "extra_resource_data"
-        const val EXTRA_POSITION = "extra_position_resource"
+        const val REQUEST_KEY = "add_journal_request"
+        const val RESULT_KEY = "journal_result"
+        const val EXTRA_IS_UPDATE = "extra_is_update"
+        const val EXTRA_JOURNAL_DATA = "extra_journal_data"
+        const val EXTRA_POSITION = "extra_position"
 
-        fun newInstance(isUpdate: Boolean = false, resourceEntry: ResourceEntry? = null, position: Int = -1): AddResourceFragment {
-            val fragment = AddResourceFragment()
+        fun newInstance(isUpdate: Boolean = false, journalEntry: JournalEntry? = null, position: Int = -1): AddJournalFragment {
+            val fragment = AddJournalFragment()
             val args = bundleOf(
                 EXTRA_IS_UPDATE to isUpdate,
                 EXTRA_POSITION to position
             )
-            resourceEntry?.let { args.putParcelable(EXTRA_RESOURCE_DATA, it) }
+            // Hanya tambahkan data jika tidak null
+            journalEntry?.let { args.putParcelable(EXTRA_JOURNAL_DATA, it) }
             fragment.arguments = args
             return fragment
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.activity_add_resource, container, false)
+        // Ganti R.layout.activity_add_journal jika nama file berbeda
+        return inflater.inflate(R.layout.activity_add_journal, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // --- Inisialisasi View dari layout ---
+        // Inisialisasi Views
         val backButton = view.findViewById<ImageView>(R.id.backButton)
         headerTextView = view.findViewById(R.id.headerTextView)
         dateEditText = view.findViewById(R.id.dateEditText)
         titleEditText = view.findViewById(R.id.titleEditText)
         descriptionEditText = view.findViewById(R.id.descriptionEditText)
         uploadButton = view.findViewById(R.id.uploadButton)
-        tagSpinner = view.findViewById(R.id.tagSpinner)
+        btnSelectImage = view.findViewById(R.id.btnSelectImage) // Ganti ID jika berbeda
+        imagePreview = view.findViewById(R.id.image_preview)   // Ganti ID jika berbeda
+        // Tambahkan ProgressBar ke layout Anda, misalnya di tengah layar
+        // progressBar = view.findViewById(R.id.progressBar)
 
-        // Gunakan ID dari layout activity_add_resource.xml
-        imagePreview = view.findViewById(R.id.imageView)
-        btnSelectImage = view.findViewById(R.id.uploadPhotoButton)
-        btnSelectImage.text = "Select Image" // Ubah teks tombol agar lebih jelas
-
-        // --- Setup Spinner ---
-        val hashtags = listOf("#Nutrition", "#Grooming", "#Health")
-        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, hashtags).also { adapter ->
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-        tagSpinner.adapter = spinnerAdapter
-
-        // --- Logika untuk mode Update atau Add New ---
         val isUpdate = arguments?.getBoolean(EXTRA_IS_UPDATE, false) ?: false
         val position = arguments?.getInt(EXTRA_POSITION, -1) ?: -1
 
         if (isUpdate) {
-            headerTextView.text = "UPDATE RESOURCE ENTRY"
+            headerTextView.text = "UPDATE JOURNAL ENTRY"
             uploadButton.text = "Update"
-            val entry = arguments?.getParcelable<ResourceEntry>(EXTRA_RESOURCE_DATA)
+            val entry = arguments?.getParcelable<JournalEntry>(EXTRA_JOURNAL_DATA)
             entry?.let {
-                val tagPosition = hashtags.indexOf(it.tag)
-                if (tagPosition >= 0) {
-                    tagSpinner.setSelection(tagPosition)
-                }
                 dateEditText.setText(it.date)
                 titleEditText.setText(it.title)
                 descriptionEditText.setText(it.description)
-                existingImageUrl = it.imageUrl // Simpan URL lama
-                // Tampilkan gambar yang sudah ada
+                existingImageUrl = it.imageUrl
                 Glide.with(this)
                     .load(it.imageUrl)
                     .placeholder(R.drawable.ic_cat_journey)
@@ -113,12 +98,12 @@ class AddResourceFragment : Fragment() {
             }
         }
 
-        // --- Event Listeners ---
         backButton.setOnClickListener {
             parentFragmentManager.popBackStack()
         }
 
         btnSelectImage.setOnClickListener {
+            // Buka galeri untuk memilih gambar
             selectImageLauncher.launch("image/*")
         }
 
@@ -126,34 +111,34 @@ class AddResourceFragment : Fragment() {
             val date = dateEditText.text.toString().trim()
             val title = titleEditText.text.toString().trim()
             val desc = descriptionEditText.text.toString().trim()
-            val tag = tagSpinner.selectedItem.toString()
 
-            if (date.isBlank() || title.isBlank() || desc.isBlank() || tag.isBlank()) {
+            if (title.isBlank() || date.isBlank() || desc.isBlank()) {
                 Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Jika ada gambar baru, unggah. Jika tidak (mode update), gunakan URL lama.
+            // Jika ada gambar baru yang dipilih, unggah. Jika tidak, gunakan URL lama (untuk mode update)
             if (imageUri != null) {
-                uploadImageToFirebase(tag, date, title, desc, isUpdate, position)
+                uploadImageToFirebase(date, title, desc, isUpdate, position)
             } else if (isUpdate && existingImageUrl != null) {
-                createResourceEntry(tag, date, title, desc, existingImageUrl!!, isUpdate, position)
+                // Tidak ada gambar baru yang dipilih, langsung simpan dengan URL lama
+                createJournalEntry(date, title, desc, existingImageUrl!!, isUpdate, position)
             } else {
                 Toast.makeText(requireContext(), "Please select an image", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun uploadImageToFirebase(tag: String, date: String, title: String, desc: String, isUpdate: Boolean, position: Int) {
+    private fun uploadImageToFirebase(date: String, title: String, desc: String, isUpdate: Boolean, position: Int) {
         setLoading(true)
-        val fileName = "resource_${System.currentTimeMillis()}.jpg"
-        val storageRef = FirebaseStorage.getInstance().getReference("/images/resource/$fileName")
+        val fileName = "journal_${System.currentTimeMillis()}.jpg"
+        val storageRef = FirebaseStorage.getInstance().getReference("/images/journal/$fileName")
 
         storageRef.putFile(imageUri!!)
             .addOnSuccessListener {
                 storageRef.downloadUrl.addOnSuccessListener { uri ->
                     val imageUrl = uri.toString()
-                    createResourceEntry(tag, date, title, desc, imageUrl, isUpdate, position)
+                    createJournalEntry(date, title, desc, imageUrl, isUpdate, position)
                     setLoading(false)
                 }
             }
@@ -163,8 +148,8 @@ class AddResourceFragment : Fragment() {
             }
     }
 
-    private fun createResourceEntry(tag: String, date: String, title: String, desc: String, imageUrl: String, isUpdate: Boolean, position: Int) {
-        val resultEntry = ResourceEntry(tag, title, date, desc, imageUrl)
+    private fun createJournalEntry(date: String, title: String, desc: String, imageUrl: String, isUpdate: Boolean, position: Int) {
+        val resultEntry = JournalEntry(date, title, desc, imageUrl)
 
         val resultBundle = bundleOf(
             RESULT_KEY to resultEntry,
@@ -176,8 +161,9 @@ class AddResourceFragment : Fragment() {
     }
 
     private fun setLoading(isLoading: Boolean) {
+        // Tampilkan/sembunyikan ProgressBar
+        // progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         uploadButton.isEnabled = !isLoading
         btnSelectImage.isEnabled = !isLoading
-        // Anda bisa menambahkan ProgressBar jika diinginkan
     }
 }

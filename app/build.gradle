@@ -1,58 +1,71 @@
 plugins {
+    // Terapkan plugin yang sudah didaftarkan di level proyek
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id 'kotlin-parcelize'
+    id("kotlin-parcelize")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace 'com.example.pawlite'
-    compileSdk 35
+    namespace = "com.example.pawlite"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId "com.example.pawlite"
-        minSdk 29
-        targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        applicationId = "com.example.pawlite"
+        minSdk = 29
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled = false
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = "11"
     }
 
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 }
 
 dependencies {
-
-    implementation libs.androidx.core.ktx
-    implementation libs.androidx.appcompat
-    implementation libs.material
-    implementation libs.androidx.activity
-    implementation libs.androidx.constraintlayout
+    // Gunakan alias dari libs.versions.toml
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.fragment.ktx)
-    testImplementation libs.junit
-    androidTestImplementation libs.androidx.junit
-    androidTestImplementation libs.androidx.espresso.core
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.fragment:fragment-ktx:1.8.1")
-    implementation libs.androidx.navigation.fragment.ktx
-    implementation libs.androidx.navigation.ui.ktx
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+
+    // Implementasi Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.storage.ktx)
+
+    // (Opsional tapi direkomendasikan) Implementasi Glide
+    // implementation(libs.glide)
+
+    // Dependensi untuk testing
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation 'com.github.bumptech.glide:glide:4.15.1' // You can check for the latest version on Maven
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.15.1' // Needed for Glide annotations
+
 }

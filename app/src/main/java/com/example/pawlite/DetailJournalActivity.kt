@@ -10,7 +10,9 @@ import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import com.bumptech.glide.Glide // <-- Tambahkan import Glide
 
+// Nama kelas sudah benar (DetailJournalFragment)
 class DetailJournalFragment : Fragment() {
 
     private var journalPosition: Int = -1
@@ -19,7 +21,6 @@ class DetailJournalFragment : Fragment() {
     companion object {
         const val REQUEST_KEY = "detail_journal_request"
         const val ACTION_DELETE = "action_delete"
-        // Tambahkan konstanta baru untuk aksi update
         const val ACTION_UPDATE = "action_update"
         const val EXTRA_JOURNAL_ENTRY = "extra_journal_entry"
         const val EXTRA_POSITION = "extra_position"
@@ -51,12 +52,17 @@ class DetailJournalFragment : Fragment() {
         journalEntry = arguments?.getParcelable(EXTRA_JOURNAL_ENTRY)
         journalPosition = arguments?.getInt(EXTRA_POSITION, -1) ?: -1
 
-
         journalEntry?.let { entry ->
             titleText.text = entry.title
             dateText.text = entry.date
             descriptionText.text = entry.description
-            imageView.setImageResource(entry.imageResId)
+
+            // --- PERUBAHAN DI SINI ---
+            // Muat gambar dari URL menggunakan Glide
+            Glide.with(this)
+                .load(entry.imageUrl)
+                .placeholder(R.drawable.sample_cat)
+                .into(imageView)
         }
 
         deleteButton.setOnClickListener {
@@ -68,8 +74,6 @@ class DetailJournalFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // --- PERUBAHAN DI SINI ---
-        // Tidak lagi navigasi langsung, tapi kirim result kembali
         updateButton.setOnClickListener {
             val resultBundle = bundleOf(
                 "action" to ACTION_UPDATE,

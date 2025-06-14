@@ -6,8 +6,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
-// Ubah konstruktor untuk menerima lambda
 class JournalAdapter(
     private val journalEntries: MutableList<JournalEntry>,
     private val onItemClicked: (JournalEntry, Int) -> Unit
@@ -28,17 +28,22 @@ class JournalAdapter(
 
     override fun onBindViewHolder(holder: JournalViewHolder, position: Int) {
         val entry = journalEntries[position]
-        holder.journalImage.setImageResource(entry.imageResId)
         holder.journalDate.text = entry.date
         holder.journalTitle.text = entry.title
         holder.journalDescription.text = entry.description
 
+        // Gunakan Glide untuk memuat gambar dari URL
+        Glide.with(holder.itemView.context)
+            .load(entry.imageUrl)
+            .placeholder(R.drawable.sample_cat) // Gambar sementara saat memuat
+            .error(R.drawable.ic_cat_walk) // Gambar jika terjadi error
+            .into(holder.journalImage)
+
         holder.itemView.setOnClickListener {
-            // Panggil lambda saat item diklik
             onItemClicked(entry, position)
         }
     }
-
+    // ... sisa kode adapter tidak berubah ...
     override fun getItemCount() = journalEntries.size
 
     fun addEntry(entry: JournalEntry) {

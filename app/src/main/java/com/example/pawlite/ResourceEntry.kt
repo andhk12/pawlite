@@ -9,5 +9,6 @@ data class ResourceEntry(
     val title: String,
     val date: String,
     val description: String,
-    val imageResId: Int
+    // Ubah tipe data dari Int menjadi String
+    val imageUrl: String
 ) : Parcelable

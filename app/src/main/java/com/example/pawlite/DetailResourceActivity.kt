@@ -10,7 +10,9 @@ import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import com.bumptech.glide.Glide // <-- Tambahkan import Glide
 
+// Nama kelas sudah benar (DetailResourceFragment)
 class DetailResourceFragment : Fragment() {
 
     private var resourcePosition: Int = -1
@@ -19,7 +21,6 @@ class DetailResourceFragment : Fragment() {
     companion object {
         const val REQUEST_KEY = "detail_resource_request"
         const val ACTION_DELETE = "action_delete_resource"
-        // Tambahkan konstanta baru untuk aksi update
         const val ACTION_UPDATE = "action_update_resource"
         const val EXTRA_RESOURCE_ENTRY = "extra_resource_entry"
         const val EXTRA_POSITION = "extra_position_resource"
@@ -57,7 +58,13 @@ class DetailResourceFragment : Fragment() {
             titleText.text = entry.title
             dateText.text = entry.date
             descriptionText.text = entry.description
-            imageView.setImageResource(entry.imageResId)
+
+            // --- PERUBAHAN DI SINI ---
+            // Muat gambar dari URL menggunakan Glide
+            Glide.with(this)
+                .load(entry.imageUrl)
+                .placeholder(R.drawable.sample_cat)
+                .into(imageView)
         }
 
         deleteButton.setOnClickListener {
@@ -69,7 +76,6 @@ class DetailResourceFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // --- PERUBAHAN DI SINI ---
         updateButton.setOnClickListener {
             val resultBundle = bundleOf(
                 "action" to ACTION_UPDATE,

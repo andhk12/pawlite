@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide // <-- Tambahkan import Glide
 
 class ResourceAdapter(
     private val resources: MutableList<ResourceEntry>,
@@ -32,7 +33,14 @@ class ResourceAdapter(
         holder.title.text = resource.title
         holder.date.text = resource.date
         holder.description.text = resource.description
-        holder.image.setImageResource(resource.imageResId)
+
+        // --- PERUBAHAN DI SINI ---
+        // Ganti dari setImageResource menjadi memuat gambar dengan Glide
+        Glide.with(holder.itemView.context)
+            .load(resource.imageUrl)
+            .placeholder(R.drawable.sample_cat) // Gambar sementara saat memuat
+            .error(R.drawable.ic_cat_walk)       // Gambar jika terjadi error
+            .into(holder.image)
 
         holder.itemView.setOnClickListener {
             onItemClicked(resource, position)
