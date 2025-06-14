@@ -19,6 +19,9 @@ class JournalFragment : Fragment() {
     private lateinit var emptyState: View
     private lateinit var tvLastVet: TextView
 
+    // 1. Pindahkan list data ke sini agar tidak direset saat view dibuat ulang
+    private val journalEntries = mutableListOf<JournalEntry>()
+
     private var lastVetVisit: String = "3 Apr 2069"
     private var weight: String = "6.9 kg"
     private var vaccines: String = "1"
@@ -42,7 +45,8 @@ class JournalFragment : Fragment() {
         emptyState = view.findViewById(R.id.empty_state_container)
         tvLastVet = view.findViewById(R.id.last_vet)
 
-        adapter = JournalAdapter(mutableListOf()) { entry, position ->
+        // 2. Gunakan list milik fragment saat inisialisasi adapter
+        adapter = JournalAdapter(journalEntries) { entry, position ->
             (activity as? MainActivity)?.navigateTo(DetailJournalFragment.newInstance(entry, position))
         }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -73,11 +77,12 @@ class JournalFragment : Fragment() {
 
         parentFragmentManager.setFragmentResultListener(AddJournalFragment.REQUEST_KEY, this) { _, bundle ->
             val newEntry = bundle.getParcelable<JournalEntry>(AddJournalFragment.RESULT_KEY)
-            val isUpdate = bundle.getBoolean(AddJournalFragment.EXTRA_IS_UPDATE)
-            val position = bundle.getInt(AddJournalFragment.EXTRA_POSITION)
+            val isUpdate = bundle.getBoolean(AddJournalFragment.EXTRA_IS_UPDATE, false)
+            // --- PERBAIKAN DI SINI ---
+            val position = bundle.getInt(AddJournalFragment.EXTRA_POSITION, -1)
 
             if (newEntry != null) {
-                if (isUpdate) {
+                if (isUpdate && position != -1) {
                     adapter.updateEntry(position, newEntry)
                     Snackbar.make(requireView(), "Journal updated successfully!", Snackbar.LENGTH_SHORT).show()
                 } else {
@@ -87,8 +92,6 @@ class JournalFragment : Fragment() {
             }
         }
 
-        // --- PERUBAHAN DI SINI ---
-        // Tambahkan logika untuk menangani aksi update dari DetailJournalFragment
         parentFragmentManager.setFragmentResultListener(DetailJournalFragment.REQUEST_KEY, this) { _, bundle ->
             val position = bundle.getInt(DetailJournalFragment.EXTRA_POSITION, -1)
             when (bundle.getString("action")) {

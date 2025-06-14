@@ -16,6 +16,9 @@ class ResourceFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: View
 
+    // 1. Pindahkan list data ke sini agar tidak direset saat view dibuat ulang
+    private val resourceEntries = mutableListOf<ResourceEntry>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setupFragmentResultListeners()
@@ -34,7 +37,8 @@ class ResourceFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_resource)
         emptyState = view.findViewById(R.id.empty_state_container)
 
-        adapter = ResourceAdapter(mutableListOf()) { entry, position ->
+        // 2. Gunakan list milik fragment saat inisialisasi adapter
+        adapter = ResourceAdapter(resourceEntries) { entry, position ->
             (activity as? MainActivity)?.navigateTo(DetailResourceFragment.newInstance(entry, position))
         }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -50,11 +54,12 @@ class ResourceFragment : Fragment() {
     private fun setupFragmentResultListeners() {
         parentFragmentManager.setFragmentResultListener(AddResourceFragment.REQUEST_KEY, this) { _, bundle ->
             val newEntry = bundle.getParcelable<ResourceEntry>(AddResourceFragment.RESULT_KEY)
-            val isUpdate = bundle.getBoolean(AddResourceFragment.EXTRA_IS_UPDATE)
-            val position = bundle.getInt(AddResourceFragment.EXTRA_POSITION)
+            // Menambahkan default value untuk keamanan
+            val isUpdate = bundle.getBoolean(AddResourceFragment.EXTRA_IS_UPDATE, false)
+            val position = bundle.getInt(AddResourceFragment.EXTRA_POSITION, -1)
 
             if (newEntry != null) {
-                if (isUpdate) {
+                if (isUpdate && position != -1) {
                     adapter.updateEntry(position, newEntry)
                     Snackbar.make(requireView(), "Resource updated successfully!", Snackbar.LENGTH_SHORT).show()
                 } else {
@@ -64,7 +69,6 @@ class ResourceFragment : Fragment() {
             }
         }
 
-        // --- PERUBAHAN DI SINI ---
         parentFragmentManager.setFragmentResultListener(DetailResourceFragment.REQUEST_KEY, this) { _, bundle ->
             val position = bundle.getInt(DetailResourceFragment.EXTRA_POSITION, -1)
             when (bundle.getString("action")) {
