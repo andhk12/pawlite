@@ -5,8 +5,9 @@ import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), FragmentManager.OnBackStackChangedListener {
 
     private val journalFragment by lazy { JournalFragment() }
     private val resourceFragment by lazy { ResourceFragment() }
@@ -23,6 +24,9 @@ class MainActivity : AppCompatActivity() {
         btnJournal = findViewById(R.id.btn_journal)
         btnResource = findViewById(R.id.btn_resource)
         tabContainer = findViewById(R.id.tab_container)
+
+        // Tambahkan listener untuk memantau perubahan back stack
+        supportFragmentManager.addOnBackStackChangedListener(this)
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -49,6 +53,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Fungsi ini akan dipanggil setiap kali ada perubahan pada back stack
+    override fun onBackStackChanged() {
+        // Cek apakah ada fragment dalam back stack
+        val hasBackStack = supportFragmentManager.backStackEntryCount > 0
+        // Sembunyikan tab jika ada fragment di back stack, jika tidak, tampilkan
+        tabContainer.visibility = if (hasBackStack) View.GONE else View.VISIBLE
+    }
+
     fun navigateTo(fragment: Fragment, addToBackStack: Boolean = true) {
         val transaction = supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
@@ -57,16 +69,14 @@ class MainActivity : AppCompatActivity() {
             transaction.addToBackStack(null)
         }
         transaction.commit()
-
-        // Sembunyikan tombol tab saat di halaman detail/tambah
-        tabContainer.visibility = View.GONE
+        // Logika untuk menyembunyikan tab dipindahkan ke onBackStackChanged
     }
 
     override fun onBackPressed() {
+        // Logika onBackPressed sudah ditangani oleh popBackStack() yang akan
+        // memicu onBackStackChanged(), jadi kita hanya perlu memanggilnya.
         if (supportFragmentManager.backStackEntryCount > 0) {
             supportFragmentManager.popBackStack()
-            // Tampilkan kembali tombol tab setelah kembali dari halaman detail
-            tabContainer.visibility = View.VISIBLE
         } else {
             super.onBackPressed()
         }

@@ -19,6 +19,8 @@ class DetailJournalFragment : Fragment() {
     companion object {
         const val REQUEST_KEY = "detail_journal_request"
         const val ACTION_DELETE = "action_delete"
+        // Tambahkan konstanta baru untuk aksi update
+        const val ACTION_UPDATE = "action_update"
         const val EXTRA_JOURNAL_ENTRY = "extra_journal_entry"
         const val EXTRA_POSITION = "extra_position"
 
@@ -66,12 +68,16 @@ class DetailJournalFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
+        // --- PERUBAHAN DI SINI ---
+        // Tidak lagi navigasi langsung, tapi kirim result kembali
         updateButton.setOnClickListener {
-            journalEntry?.let { entry ->
-                (activity as? MainActivity)?.navigateTo(
-                    AddJournalFragment.newInstance(isUpdate = true, journalEntry = entry, position = journalPosition)
-                )
-            }
+            val resultBundle = bundleOf(
+                "action" to ACTION_UPDATE,
+                EXTRA_JOURNAL_ENTRY to journalEntry,
+                EXTRA_POSITION to journalPosition
+            )
+            setFragmentResult(REQUEST_KEY, resultBundle)
+            parentFragmentManager.popBackStack()
         }
     }
 }

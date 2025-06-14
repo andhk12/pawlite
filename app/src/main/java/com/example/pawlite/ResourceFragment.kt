@@ -34,7 +34,6 @@ class ResourceFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_resource)
         emptyState = view.findViewById(R.id.empty_state_container)
 
-        // Inisialisasi adapter dengan lambda untuk click handling
         adapter = ResourceAdapter(mutableListOf()) { entry, position ->
             (activity as? MainActivity)?.navigateTo(DetailResourceFragment.newInstance(entry, position))
         }
@@ -49,7 +48,6 @@ class ResourceFragment : Fragment() {
     }
 
     private fun setupFragmentResultListeners() {
-        // Listener untuk hasil dari AddResourceFragment
         parentFragmentManager.setFragmentResultListener(AddResourceFragment.REQUEST_KEY, this) { _, bundle ->
             val newEntry = bundle.getParcelable<ResourceEntry>(AddResourceFragment.RESULT_KEY)
             val isUpdate = bundle.getBoolean(AddResourceFragment.EXTRA_IS_UPDATE)
@@ -58,6 +56,7 @@ class ResourceFragment : Fragment() {
             if (newEntry != null) {
                 if (isUpdate) {
                     adapter.updateEntry(position, newEntry)
+                    Snackbar.make(requireView(), "Resource updated successfully!", Snackbar.LENGTH_SHORT).show()
                 } else {
                     adapter.addEntry(newEntry)
                 }
@@ -65,13 +64,25 @@ class ResourceFragment : Fragment() {
             }
         }
 
-        // Listener untuk hasil dari DetailResourceFragment
+        // --- PERUBAHAN DI SINI ---
         parentFragmentManager.setFragmentResultListener(DetailResourceFragment.REQUEST_KEY, this) { _, bundle ->
             val position = bundle.getInt(DetailResourceFragment.EXTRA_POSITION, -1)
-            if (position != -1 && bundle.getString("action") == DetailResourceFragment.ACTION_DELETE) {
-                adapter.removeEntry(position)
-                checkEmptyState()
-                Snackbar.make(recyclerView, "Resource berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+            when (bundle.getString("action")) {
+                DetailResourceFragment.ACTION_DELETE -> {
+                    if (position != -1) {
+                        adapter.removeEntry(position)
+                        checkEmptyState()
+                        Snackbar.make(recyclerView, "Resource berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                DetailResourceFragment.ACTION_UPDATE -> {
+                    val entryToUpdate = bundle.getParcelable<ResourceEntry>(DetailResourceFragment.EXTRA_RESOURCE_ENTRY)
+                    if (position != -1 && entryToUpdate != null) {
+                        (activity as? MainActivity)?.navigateTo(
+                            AddResourceFragment.newInstance(isUpdate = true, resourceEntry = entryToUpdate, position = position)
+                        )
+                    }
+                }
             }
         }
     }

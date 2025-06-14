@@ -19,6 +19,8 @@ class DetailResourceFragment : Fragment() {
     companion object {
         const val REQUEST_KEY = "detail_resource_request"
         const val ACTION_DELETE = "action_delete_resource"
+        // Tambahkan konstanta baru untuk aksi update
+        const val ACTION_UPDATE = "action_update_resource"
         const val EXTRA_RESOURCE_ENTRY = "extra_resource_entry"
         const val EXTRA_POSITION = "extra_position_resource"
 
@@ -67,12 +69,15 @@ class DetailResourceFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
+        // --- PERUBAHAN DI SINI ---
         updateButton.setOnClickListener {
-            resourceEntry?.let { entry ->
-                (activity as? MainActivity)?.navigateTo(
-                    AddResourceFragment.newInstance(isUpdate = true, resourceEntry = entry, position = resourcePosition)
-                )
-            }
+            val resultBundle = bundleOf(
+                "action" to ACTION_UPDATE,
+                EXTRA_RESOURCE_ENTRY to resourceEntry,
+                EXTRA_POSITION to resourcePosition
+            )
+            setFragmentResult(REQUEST_KEY, resultBundle)
+            parentFragmentManager.popBackStack()
         }
     }
 }

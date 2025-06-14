@@ -42,7 +42,6 @@ class JournalFragment : Fragment() {
         emptyState = view.findViewById(R.id.empty_state_container)
         tvLastVet = view.findViewById(R.id.last_vet)
 
-        // Ubah adapter untuk menangani klik
         adapter = JournalAdapter(mutableListOf()) { entry, position ->
             (activity as? MainActivity)?.navigateTo(DetailJournalFragment.newInstance(entry, position))
         }
@@ -64,7 +63,6 @@ class JournalFragment : Fragment() {
     }
 
     private fun setupFragmentResultListeners() {
-        // Listener untuk hasil dari HealthDetailFragment
         parentFragmentManager.setFragmentResultListener(HealthDetailFragment.REQUEST_KEY, this) { _, bundle ->
             lastVetVisit = bundle.getString(HealthDetailFragment.EXTRA_VET_VISIT, lastVetVisit)
             weight = bundle.getString(HealthDetailFragment.EXTRA_WEIGHT, weight)
@@ -73,7 +71,6 @@ class JournalFragment : Fragment() {
             Snackbar.make(requireView(), "Health summary updated successfully!", Snackbar.LENGTH_SHORT).show()
         }
 
-        // Listener untuk hasil dari AddJournalFragment
         parentFragmentManager.setFragmentResultListener(AddJournalFragment.REQUEST_KEY, this) { _, bundle ->
             val newEntry = bundle.getParcelable<JournalEntry>(AddJournalFragment.RESULT_KEY)
             val isUpdate = bundle.getBoolean(AddJournalFragment.EXTRA_IS_UPDATE)
@@ -82,6 +79,7 @@ class JournalFragment : Fragment() {
             if (newEntry != null) {
                 if (isUpdate) {
                     adapter.updateEntry(position, newEntry)
+                    Snackbar.make(requireView(), "Journal updated successfully!", Snackbar.LENGTH_SHORT).show()
                 } else {
                     adapter.addEntry(newEntry)
                 }
@@ -89,13 +87,26 @@ class JournalFragment : Fragment() {
             }
         }
 
-        // Listener untuk hasil dari DetailJournalFragment
+        // --- PERUBAHAN DI SINI ---
+        // Tambahkan logika untuk menangani aksi update dari DetailJournalFragment
         parentFragmentManager.setFragmentResultListener(DetailJournalFragment.REQUEST_KEY, this) { _, bundle ->
             val position = bundle.getInt(DetailJournalFragment.EXTRA_POSITION, -1)
-            if (position != -1 && bundle.getString("action") == DetailJournalFragment.ACTION_DELETE) {
-                adapter.removeEntry(position)
-                checkEmptyState()
-                Snackbar.make(recyclerView, "Entri berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+            when (bundle.getString("action")) {
+                DetailJournalFragment.ACTION_DELETE -> {
+                    if (position != -1) {
+                        adapter.removeEntry(position)
+                        checkEmptyState()
+                        Snackbar.make(recyclerView, "Entri berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                DetailJournalFragment.ACTION_UPDATE -> {
+                    val entryToUpdate = bundle.getParcelable<JournalEntry>(DetailJournalFragment.EXTRA_JOURNAL_ENTRY)
+                    if (position != -1 && entryToUpdate != null) {
+                        (activity as? MainActivity)?.navigateTo(
+                            AddJournalFragment.newInstance(isUpdate = true, journalEntry = entryToUpdate, position = position)
+                        )
+                    }
+                }
             }
         }
     }
