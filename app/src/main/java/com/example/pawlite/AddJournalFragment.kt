@@ -26,7 +26,6 @@ class AddJournalFragment : Fragment() {
     private lateinit var dateEditText: TextView // DIUBAH: dari EditText ke TextView
     private lateinit var descriptionEditText: EditText
     private lateinit var headerTextView: TextView
-    private lateinit var progressBar: ProgressBar // Tambahkan ProgressBar
 
     private var imageUri: Uri? = null
     private var existingImageUrl: String? = null
