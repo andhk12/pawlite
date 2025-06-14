@@ -5,26 +5,32 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class JournalFragment : Fragment() {
 
     private lateinit var adapter: JournalAdapter
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyState: View
-    private lateinit var tvLastVet: TextView
 
-    // 1. Pindahkan list data ke sini agar tidak direset saat view dibuat ulang
+    // Deklarasi View untuk Dasbor
+    private lateinit var greetingText: TextView
+    private lateinit var statTotal: TextView
+    private lateinit var statMonthly: TextView
+    private lateinit var statPhotos: TextView
+    private lateinit var memoryContainer: LinearLayout
+    private lateinit var memoryTitle: TextView
+    private lateinit var memoryDivider: View
+
     private val journalEntries = mutableListOf<JournalEntry>()
-
-    private var lastVetVisit: String = "3 Apr 2069"
-    private var weight: String = "6.9 kg"
-    private var vaccines: String = "1"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,44 +47,35 @@ class JournalFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Inisialisasi View
         recyclerView = view.findViewById(R.id.recycler_journal)
         emptyState = view.findViewById(R.id.empty_state_container)
-        tvLastVet = view.findViewById(R.id.last_vet)
+        greetingText = view.findViewById(R.id.dashboard_greeting)
+        statTotal = view.findViewById(R.id.stat_total)
+        statMonthly = view.findViewById(R.id.stat_monthly)
+        statPhotos = view.findViewById(R.id.stat_photos)
+        memoryContainer = view.findViewById(R.id.memory_container)
+        memoryTitle = view.findViewById(R.id.memory_title)
+        memoryDivider = view.findViewById(R.id.divider_memory)
 
-        // 2. Gunakan list milik fragment saat inisialisasi adapter
         adapter = JournalAdapter(journalEntries) { entry, position ->
             (activity as? MainActivity)?.navigateTo(DetailJournalFragment.newInstance(entry, position))
         }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        updateHealthSummaryUI()
+        updateJournalDashboard() // Panggil fungsi untuk mengisi dasbor
         checkEmptyState()
 
         view.findViewById<Button>(R.id.btn_add_journal).setOnClickListener {
             (activity as? MainActivity)?.navigateTo(AddJournalFragment.newInstance())
         }
-
-        view.findViewById<CardView>(R.id.card_health_summary).setOnClickListener {
-            (activity as? MainActivity)?.navigateTo(
-                HealthDetailFragment.newInstance(lastVetVisit, weight, vaccines)
-            )
-        }
     }
 
     private fun setupFragmentResultListeners() {
-        parentFragmentManager.setFragmentResultListener(HealthDetailFragment.REQUEST_KEY, this) { _, bundle ->
-            lastVetVisit = bundle.getString(HealthDetailFragment.EXTRA_VET_VISIT, lastVetVisit)
-            weight = bundle.getString(HealthDetailFragment.EXTRA_WEIGHT, weight)
-            vaccines = bundle.getString(HealthDetailFragment.EXTRA_VACCINES, vaccines)
-            updateHealthSummaryUI()
-            Snackbar.make(requireView(), "Health summary updated successfully!", Snackbar.LENGTH_SHORT).show()
-        }
-
         parentFragmentManager.setFragmentResultListener(AddJournalFragment.REQUEST_KEY, this) { _, bundle ->
             val newEntry = bundle.getParcelable<JournalEntry>(AddJournalFragment.RESULT_KEY)
             val isUpdate = bundle.getBoolean(AddJournalFragment.EXTRA_IS_UPDATE, false)
-            // --- PERBAIKAN DI SINI ---
             val position = bundle.getInt(AddJournalFragment.EXTRA_POSITION, -1)
 
             if (newEntry != null) {
@@ -89,6 +86,7 @@ class JournalFragment : Fragment() {
                     adapter.addEntry(newEntry)
                 }
                 checkEmptyState()
+                updateJournalDashboard() // Perbarui dasbor
             }
         }
 
@@ -100,6 +98,7 @@ class JournalFragment : Fragment() {
                         adapter.removeEntry(position)
                         checkEmptyState()
                         Snackbar.make(recyclerView, "Entri berhasil dihapus", Snackbar.LENGTH_SHORT).show()
+                        updateJournalDashboard() // Perbarui dasbor
                     }
                 }
                 DetailJournalFragment.ACTION_UPDATE -> {
@@ -114,6 +113,55 @@ class JournalFragment : Fragment() {
         }
     }
 
+    private fun updateJournalDashboard() {
+        // 1. Atur Sapaan Dinamis
+        val calendar = Calendar.getInstance()
+        val greeting = when (calendar.get(Calendar.HOUR_OF_DAY)) {
+            in 4..10 -> "Selamat Pagi!"
+            in 11..14 -> "Selamat Siang!"
+            in 15..17 -> "Selamat Sore!"
+            else -> "Selamat Malam!"
+        }
+        greetingText.text = greeting
+
+        // 2. Hitung dan Tampilkan Statistik
+        val totalCount = journalEntries.size
+        val monthlyCount = journalEntries.count { entry ->
+            try {
+                val entryDate = SimpleDateFormat("dd MMMM yyyy", Locale.forLanguageTag("id")).parse(entry.date)
+                val entryCal = Calendar.getInstance().apply { time = entryDate!! }
+                entryCal.get(Calendar.MONTH) == calendar.get(Calendar.MONTH) &&
+                        entryCal.get(Calendar.YEAR) == calendar.get(Calendar.YEAR)
+            } catch (e: Exception) { false }
+        }
+        val photoCount = journalEntries.count { it.imageUrl.isNotEmpty() }
+
+        statTotal.text = totalCount.toString()
+        statMonthly.text = monthlyCount.toString()
+        statPhotos.text = photoCount.toString()
+
+        // 3. Cari dan Tampilkan Kenangan "On This Day"
+        val currentMonthDay = SimpleDateFormat("dd-MM", Locale.forLanguageTag("id")).format(calendar.time)
+        val memoryEntry = journalEntries.find { entry ->
+            try {
+                val entryDate = SimpleDateFormat("dd MMMM yyyy", Locale.forLanguageTag("id")).parse(entry.date)
+                val entryCal = Calendar.getInstance().apply { time = entryDate!! }
+                val entryMonthDay = SimpleDateFormat("dd-MM", Locale.forLanguageTag("id")).format(entryCal.time)
+
+                entryMonthDay == currentMonthDay && entryCal.get(Calendar.YEAR) < calendar.get(Calendar.YEAR)
+            } catch (e: Exception) { false }
+        }
+
+        if (memoryEntry != null) {
+            memoryTitle.text = "“${memoryEntry.title}”"
+            memoryContainer.visibility = View.VISIBLE
+            memoryDivider.visibility = View.VISIBLE
+        } else {
+            memoryContainer.visibility = View.GONE
+            memoryDivider.visibility = View.GONE
+        }
+    }
+
     private fun checkEmptyState() {
         if (adapter.itemCount == 0) {
             recyclerView.visibility = View.GONE
@@ -122,9 +170,5 @@ class JournalFragment : Fragment() {
             recyclerView.visibility = View.VISIBLE
             emptyState.visibility = View.GONE
         }
-    }
-
-    private fun updateHealthSummaryUI() {
-        tvLastVet.text = "Last Vet Visit: $lastVetVisit\nWeight: $weight\nVaccines: $vaccines"
     }
 }
