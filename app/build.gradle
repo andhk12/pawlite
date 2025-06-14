@@ -58,7 +58,7 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
 
     // (Opsional tapi direkomendasikan) Implementasi Glide
-    // implementation(libs.glide)
+//     implementation(libs.glide)
 
     // Dependensi untuk testing
     testImplementation(libs.junit)

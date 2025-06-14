@@ -1,5 +1,6 @@
 package com.example.pawlite
 
+import android.app.DatePickerDialog
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
+import java.text.SimpleDateFormat
 import java.util.*
 
 // Ganti nama file dan kelas dari AddJournalActivity menjadi AddJournalFragment
@@ -21,7 +23,7 @@ class AddJournalFragment : Fragment() {
     private lateinit var btnSelectImage: Button
     private lateinit var uploadButton: Button
     private lateinit var titleEditText: EditText
-    private lateinit var dateEditText: EditText
+    private lateinit var dateEditText: TextView // DIUBAH: dari EditText ke TextView
     private lateinit var descriptionEditText: EditText
     private lateinit var headerTextView: TextView
     private lateinit var progressBar: ProgressBar // Tambahkan ProgressBar
@@ -87,7 +89,7 @@ class AddJournalFragment : Fragment() {
             uploadButton.text = "Update"
             val entry = arguments?.getParcelable<JournalEntry>(EXTRA_JOURNAL_DATA)
             entry?.let {
-                dateEditText.setText(it.date)
+                dateEditText.text = it.date // DIUBAH: dari setText ke text
                 titleEditText.setText(it.title)
                 descriptionEditText.setText(it.description)
                 existingImageUrl = it.imageUrl
@@ -105,6 +107,11 @@ class AddJournalFragment : Fragment() {
         btnSelectImage.setOnClickListener {
             // Buka galeri untuk memilih gambar
             selectImageLauncher.launch("image/*")
+        }
+
+        // DITAMBAHKAN: OnClickListener untuk menampilkan DatePickerDialog
+        dateEditText.setOnClickListener {
+            showDatePickerDialog()
         }
 
         uploadButton.setOnClickListener {
@@ -127,6 +134,28 @@ class AddJournalFragment : Fragment() {
                 Toast.makeText(requireContext(), "Please select an image", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    // DITAMBAHKAN: Fungsi untuk menampilkan kalender
+    private fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val datePickerDialog = DatePickerDialog(
+            requireContext(),
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val selectedDate = Calendar.getInstance()
+                selectedDate.set(selectedYear, selectedMonth, selectedDay)
+                val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID"))
+                dateEditText.text = dateFormat.format(selectedDate.time)
+            },
+            year,
+            month,
+            day
+        )
+        datePickerDialog.show()
     }
 
     private fun uploadImageToFirebase(date: String, title: String, desc: String, isUpdate: Boolean, position: Int) {
