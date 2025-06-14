@@ -43,7 +43,16 @@ class AddResourceFragment : Fragment() {
         val titleEditText = view.findViewById<EditText>(R.id.titleEditText)
         val descriptionEditText = view.findViewById<EditText>(R.id.descriptionEditText)
         val uploadButton = view.findViewById<Button>(R.id.uploadButton)
-        val tagEditText = view.findViewById<EditText>(R.id.tagEditText)
+
+        // --- PERUBAHAN 1: Ganti EditText menjadi Spinner ---
+        val tagSpinner = view.findViewById<Spinner>(R.id.tagSpinner)
+
+        // --- PERUBAHAN 2: Siapkan data dan adapter untuk Spinner ---
+        val hashtags = listOf("#Nutrition", "#Grooming", "#Health")
+        val spinnerAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, hashtags).also { adapter ->
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        tagSpinner.adapter = spinnerAdapter
 
         val isUpdate = arguments?.getBoolean(EXTRA_IS_UPDATE, false) ?: false
         val position = arguments?.getInt(EXTRA_POSITION, -1) ?: -1
@@ -53,7 +62,12 @@ class AddResourceFragment : Fragment() {
             uploadButton.text = "Update"
             val entry = arguments?.getParcelable<ResourceEntry>(EXTRA_RESOURCE_DATA)
             if (entry != null) {
-                tagEditText.setText(entry.tag)
+                // --- PERUBAHAN 3: Atur pilihan Spinner jika dalam mode update ---
+                val tagPosition = hashtags.indexOf(entry.tag)
+                if (tagPosition >= 0) {
+                    tagSpinner.setSelection(tagPosition)
+                }
+
                 dateEditText.setText(entry.date)
                 titleEditText.setText(entry.title)
                 descriptionEditText.setText(entry.description)
@@ -68,7 +82,8 @@ class AddResourceFragment : Fragment() {
             val date = dateEditText.text.toString()
             val title = titleEditText.text.toString()
             val desc = descriptionEditText.text.toString()
-            val tag = tagEditText.text.toString()
+            // --- PERUBAHAN 4: Ambil data dari Spinner ---
+            val tag = tagSpinner.selectedItem.toString()
 
             if (date.isNotBlank() && title.isNotBlank() && desc.isNotBlank() && tag.isNotBlank()) {
                 val resultEntry = ResourceEntry(tag, title, date, desc, R.drawable.sample_cat) // default image
